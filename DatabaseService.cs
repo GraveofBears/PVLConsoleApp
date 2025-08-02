@@ -1,65 +1,100 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Data.SQLite;
-using System.Security.Cryptography;
-using System.Text;
+using System.IO;
 
 namespace AuthServerTool
 {
-    public class DatabaseService
+    public static class DatabaseService
     {
+        private const string DatabaseFile = "auth.db";
         private const string ConnectionString = "Data Source=auth.db;Version=3;";
-        private SQLiteConnection _connection;
 
-        public void Initialize()
+        public static void Initialize()
         {
-            _connection = new SQLiteConnection(ConnectionString);
-            _connection.Open();
+            bool newlyCreated = false;
 
-            using var command = new SQLiteCommand(_connection);
-            command.CommandText = @"
+            if (!File.Exists(DatabaseFile))
+            {
+                SQLiteConnection.CreateFile(DatabaseFile);
+                newlyCreated = true;
+                Console.WriteLine("📂 Database file created.");
+            }
+
+            using var conn = new SQLiteConnection(ConnectionString);
+            conn.Open();
+            using var cmd = new SQLiteCommand(conn);
+
+            // 👤 Create 'users' table
+            cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL UNIQUE,
-                    passwordHash TEXT NOT NULL
-                )";
-            command.ExecuteNonQuery();
+                    passwordHash TEXT NOT NULL,
+                    accessLevel TEXT DEFAULT 'user',
+                    email TEXT NOT NULL,
+                    isSuspended INTEGER DEFAULT 0,
+                    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+                );";
+            cmd.ExecuteNonQuery();
+
+            // 📦 Create 'sessions' table
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS sessions (
+                    sessionId TEXT PRIMARY KEY,
+                    username TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    token TEXT NOT NULL
+                );";
+            cmd.ExecuteNonQuery();
+
+            // 🔍 Patch missing user columns
+            var requiredColumns = new[] { "customerCode", "company", "firstName", "lastName", "isSuspended" };
+            cmd.CommandText = "PRAGMA table_info(users);";
+            using var reader = cmd.ExecuteReader();
+            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            while (reader.Read())
+            {
+                if (reader["name"] is string name)
+                    existingColumns.Add(name);
+            }
+
+            reader.Close();
+
+            foreach (var column in requiredColumns)
+            {
+                if (!existingColumns.Contains(column))
+                {
+                    string columnType = column == "isSuspended" ? "INTEGER DEFAULT 0" : "TEXT";
+                    cmd.CommandText = $"ALTER TABLE users ADD COLUMN {column} {columnType};";
+                    cmd.ExecuteNonQuery();
+                    Console.WriteLine($"🔧 Patched missing column: {column}");
+                }
+            }
+
+            // 🧪 Optional seed for dev visibility
+            if (newlyCreated)
+            {
+                cmd.CommandText = @"
+                    INSERT INTO users (
+                        username, passwordHash, accessLevel, email, isSuspended,
+                        customerCode, company, firstName, lastName
+                    ) VALUES (
+                        'AdminUser', 'placeholderHash', 'Admin', 'admin@example.com', 0,
+                        'CUST001', 'DemoCorp', 'Admin', 'User'
+                    );";
+                cmd.ExecuteNonQuery();
+                Console.WriteLine("🧪 Inserted dummy admin user for GUI visibility.");
+            }
         }
 
-        public bool UserExists(string username)
+        public static SQLiteConnection GetConnection()
         {
-            using var command = new SQLiteCommand("SELECT COUNT(*) FROM users WHERE username = @username", _connection);
-            command.Parameters.AddWithValue("@username", username);
-            long count = (long)command.ExecuteScalar();
-            return count > 0;
-        }
-
-        public void CreateUser(string username, string password)
-        {
-            string hash = HashPassword(password);
-            using var command = new SQLiteCommand("INSERT INTO users (username, passwordHash) VALUES (@username, @passwordHash)", _connection);
-            command.Parameters.AddWithValue("@username", username);
-            command.Parameters.AddWithValue("@passwordHash", hash);
-            command.ExecuteNonQuery();
-        }
-
-        public bool ValidateUserWithSecret(string username, string password, string secretKey)
-        {
-            using var command = new SQLiteCommand("SELECT passwordHash FROM users WHERE username = @username", _connection);
-            command.Parameters.AddWithValue("@username", username);
-            using var reader = command.ExecuteReader();
-
-            if (!reader.Read()) return false;
-
-            string storedHash = reader.GetString(0);
-            string providedHash = HashPassword(password + secretKey);
-            return storedHash == providedHash;
-        }
-
-        private string HashPassword(string input)
-        {
-            using var sha256 = SHA256.Create();
-            byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return Convert.ToBase64String(bytes);
+            var conn = new SQLiteConnection(ConnectionString);
+            conn.Open();
+            return conn;
         }
     }
 }
+#nullable restore

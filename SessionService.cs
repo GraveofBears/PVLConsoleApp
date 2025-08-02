@@ -1,22 +1,26 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.IO;
 using System.Text.Json;
-using ConsoleApp.Models;
+using AuthServerTool.Models;
 
 namespace AuthServerTool
 {
     public class SessionService
     {
         private readonly string _userFolder;
+        private readonly string _sessionFile;
 
         public SessionService(string userFolder)
         {
             _userFolder = userFolder;
+            _sessionFile = Path.Combine(_userFolder, "session.json");
+
+            Directory.CreateDirectory(_userFolder); // Ensure path exists
         }
 
         public void CreateSession(User user)
         {
-            string sessionPath = GetSessionFilePath();
             var sessionData = new Session
             {
                 Username = user.Username,
@@ -24,40 +28,49 @@ namespace AuthServerTool
             };
 
             string json = JsonSerializer.Serialize(sessionData, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(sessionPath, json);
+            File.WriteAllText(_sessionFile, json);
 
-            Console.WriteLine($"🗂️ Session created at {sessionPath}");
+            Console.WriteLine($"🗂️ Session created at {_sessionFile}");
         }
 
-        public Session GetSession()
+        public Session? GetSession()
         {
-            string sessionPath = GetSessionFilePath();
-            if (!File.Exists(sessionPath))
+            if (!File.Exists(_sessionFile))
                 return null;
 
-            string json = File.ReadAllText(sessionPath);
-            return JsonSerializer.Deserialize<Session>(json);
+            try
+            {
+                string json = File.ReadAllText(_sessionFile);
+                return JsonSerializer.Deserialize<Session>(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Failed to load session: {ex.Message}");
+                return null;
+            }
         }
 
         public void EndSession()
         {
-            string sessionPath = GetSessionFilePath();
-            if (File.Exists(sessionPath))
+            if (File.Exists(_sessionFile))
             {
-                File.Delete(sessionPath);
-                Console.WriteLine("🧹 Session ended.");
+                try
+                {
+                    File.Delete(_sessionFile);
+                    Console.WriteLine("🧹 Session ended.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Failed to delete session: {ex.Message}");
+                }
             }
-        }
-
-        private string GetSessionFilePath()
-        {
-            return Path.Combine(_userFolder, "session.json");
         }
     }
 
     public class Session
     {
-        public string Username { get; set; }
+        public required string Username { get; set; }
         public DateTime LoginTime { get; set; }
     }
 }
+#nullable restore

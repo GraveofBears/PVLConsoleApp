@@ -4,11 +4,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 
+
+
 namespace AuthServerTool.Utils
 {
     public static class AuthUtils
     {
-        // 🔧 Generate a lean JWT token with timing claims
+        // 🧪 Generate JWT token for authenticated user
         public static string GenerateJwt(string username, string secretKey)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -31,7 +33,7 @@ namespace AuthServerTool.Utils
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // 🔍 Validate incoming token and return claims if valid
+        // 🔎 Validate incoming token and return claims if valid
         public static ClaimsPrincipal? ValidateJwt(string token, string secretKey)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -51,15 +53,31 @@ namespace AuthServerTool.Utils
                     IssuerSigningKey = key,
 
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero // 🕒 Strict expiration check
+                    ClockSkew = TimeSpan.Zero
                 }, out _);
 
                 return principal;
             }
             catch
             {
-                return null; // ❌ Invalid token
+                return null;
             }
+        }
+
+        // 🛑 Optional: suspension status enforcement (call before token issuance)
+        public static bool IsUserSuspended(string username)
+        {
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new System.Data.SQLite.SQLiteCommand("SELECT isSuspended FROM users WHERE username = @username", conn);
+            cmd.Parameters.AddWithValue("@username", username);
+
+            var result = cmd.ExecuteScalar();
+            if (result != null && Convert.ToInt32(result) == 1)
+            {
+                return true; // user is suspended
+            }
+
+            return false;
         }
     }
 }
