@@ -3,142 +3,122 @@
     partial class EditUserForm
     {
         private System.ComponentModel.IContainer components = null;
-
-        private Label customerCodeLabel;
-        private TextBox customerCodeInput;
-        private Label companyLabel;
-        private TextBox companyInput;
-        private Label emailLabel;
-        private TextBox emailInput;
-        private Label accessLabel;
-        private ComboBox accessDropdown;
-        private Label passwordLabel;
-        private TextBox passwordInput;
-        private Button saveButton;
-        private Button cancelButton;
+        private System.Windows.Forms.Label usernameLabel;
+        private System.Windows.Forms.TextBox usernameInput;
+        private System.Windows.Forms.Label firstNameLabel;
+        private System.Windows.Forms.TextBox firstNameInput;
+        private System.Windows.Forms.Label lastNameLabel;
+        private System.Windows.Forms.TextBox lastNameInput;
+        private System.Windows.Forms.Label emailLabel;
+        private System.Windows.Forms.TextBox emailInput;
+        private System.Windows.Forms.Label customerCodeLabel;
+        private System.Windows.Forms.TextBox customerCodeInput;
+        private System.Windows.Forms.Label companyLabel;
+        private System.Windows.Forms.TextBox companyInput;
+        private System.Windows.Forms.Label accessLabel;
+        private System.Windows.Forms.ComboBox accessDropdown;
+        private System.Windows.Forms.Label passwordLabel;
+        private System.Windows.Forms.TextBox passwordInput;
+        private System.Windows.Forms.Button saveButton;
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && components != null)
-                components.Dispose();
+            if (disposing && (components != null)) components.Dispose();
             base.Dispose(disposing);
         }
 
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
+            this.usernameLabel = new Label();
+            this.usernameInput = new TextBox();
+            this.firstNameLabel = new Label();
+            this.firstNameInput = new TextBox();
+            this.lastNameLabel = new Label();
+            this.lastNameInput = new TextBox();
+            this.emailLabel = new Label();
+            this.emailInput = new TextBox();
+            this.customerCodeLabel = new Label();
+            this.customerCodeInput = new TextBox();
+            this.companyLabel = new Label();
+            this.companyInput = new TextBox();
+            this.accessLabel = new Label();
+            this.accessDropdown = new ComboBox();
+            this.passwordLabel = new Label();
+            this.passwordInput = new TextBox();
+            this.saveButton = new Button();
+            this.SuspendLayout();
 
-            customerCodeLabel = new Label
+            int x = 20, width = 250, labelHeight = 15, inputHeight = 23;
+            int y = 20, padding = 5;
+
+            // Utility method for label & input positioning
+            void PlaceControl(Control label, Control input)
             {
-                Text = "Customer Code:",
-                Top = 20,
-                Left = 20,
-                AutoSize = true
-            };
+                label.Location = new Point(x, y);
+                label.Size = new Size(width, labelHeight);
+                y += labelHeight + padding;
+                input.Location = new Point(x, y);
+                input.Size = new Size(width, inputHeight);
+                y += inputHeight + padding * 2;
+                this.Controls.Add(label);
+                this.Controls.Add(input);
+            }
 
-            customerCodeInput = new TextBox
-            {
-                Top = 45,
-                Left = 20,
-                Width = 160
-            };
+            // Username
+            usernameLabel.Text = "Username:";
+            usernameInput.Name = "usernameInput";
+            PlaceControl(usernameLabel, usernameInput);
 
-            companyLabel = new Label
-            {
-                Text = "Company:",
-                Top = 85,
-                Left = 20,
-                AutoSize = true
-            };
+            // First Name
+            firstNameLabel.Text = "First Name:";
+            firstNameInput.Name = "firstNameInput";
+            PlaceControl(firstNameLabel, firstNameInput);
 
-            companyInput = new TextBox
-            {
-                Top = 110,
-                Left = 20,
-                Width = 340
-            };
+            // Last Name
+            lastNameLabel.Text = "Last Name:";
+            lastNameInput.Name = "lastNameInput";
+            PlaceControl(lastNameLabel, lastNameInput);
 
-            emailLabel = new Label
-            {
-                Text = "Email:",
-                Top = 150,
-                Left = 20,
-                AutoSize = true
-            };
+            // Email
+            emailLabel.Text = "Email:";
+            emailInput.Name = "emailInput";
+            PlaceControl(emailLabel, emailInput);
 
-            emailInput = new TextBox
-            {
-                Top = 175,
-                Left = 20,
-                Width = 340
-            };
+            // Customer Code
+            customerCodeLabel.Text = "Customer Code:";
+            customerCodeInput.Name = "customerCodeInput";
+            PlaceControl(customerCodeLabel, customerCodeInput);
 
-            accessLabel = new Label
-            {
-                Text = "Access Level:",
-                Top = 215,
-                Left = 20,
-                AutoSize = true
-            };
+            // Company
+            companyLabel.Text = "Company:";
+            companyInput.Name = "companyInput";
+            PlaceControl(companyLabel, companyInput);
 
-            accessDropdown = new ComboBox
-            {
-                Top = 240,
-                Left = 20,
-                Width = 200,
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            accessDropdown.Items.AddRange(new[] { "user", "admin", "supervisor" });
+            // Access Level
+            accessLabel.Text = "Access Level:";
+            accessDropdown.DropDownStyle = ComboBoxStyle.DropDownList;
+            accessDropdown.Name = "accessDropdown";
+            PlaceControl(accessLabel, accessDropdown);
 
-            passwordLabel = new Label
-            {
-                Text = "New Password (optional):",
-                Top = 280,
-                Left = 20,
-                AutoSize = true
-            };
+            // Password
+            passwordLabel.Text = "New Password (optional):";
+            passwordInput.Name = "passwordInput";
+            passwordInput.PasswordChar = '*';
+            PlaceControl(passwordLabel, passwordInput);
 
-            passwordInput = new TextBox
-            {
-                Top = 305,
-                Left = 20,
-                Width = 340,
-                UseSystemPasswordChar = true
-            };
+            // Save Button
+            saveButton.Text = "Save Changes";
+            saveButton.Name = "saveButton";
+            saveButton.Size = new Size(width, 30);
+            saveButton.Location = new Point(x, y);
+            saveButton.Click += new EventHandler(this.saveButton_Click);
+            this.Controls.Add(saveButton);
 
-            saveButton = new Button
-            {
-                Text = "Save",
-                Top = 350,
-                Left = 160,
-                Width = 80
-            };
-            saveButton.Click += saveButton_Click;
-
-            cancelButton = new Button
-            {
-                Text = "Cancel",
-                Top = 350,
-                Left = 250,
-                Width = 80
-            };
-            cancelButton.Click += (_, _) => this.Close();
-
-            this.Controls.AddRange(new Control[]
-            {
-                customerCodeLabel, customerCodeInput,
-                companyLabel, companyInput,
-                emailLabel, emailInput,
-                accessLabel, accessDropdown,
-                passwordLabel, passwordInput,
-                saveButton, cancelButton
-            });
-
-            this.ClientSize = new System.Drawing.Size(400, 400);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.AcceptButton = saveButton;
+            // EditUserForm
+            this.ClientSize = new Size(300, saveButton.Bottom + 20);
+            this.Name = "EditUserForm";
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
     }
 }

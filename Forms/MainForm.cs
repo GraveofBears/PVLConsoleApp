@@ -26,41 +26,26 @@ namespace PVLConsoleApp.Forms
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Size = new Size(800, 500);
 
+            // Menu Strip
             menuStrip = new MenuStrip();
-
-            // 📁 File Menu
             fileMenu = new ToolStripMenuItem("File");
-            var configurationItem = new ToolStripMenuItem("Configuration");
-            configurationItem.Click += configurationToolStripMenuItem_Click;
-            var exitItem = new ToolStripMenuItem("Exit Program");
-            exitItem.Click += (_, _) => Application.Exit();
-            fileMenu.DropDownItems.Add(configurationItem);
-            fileMenu.DropDownItems.Add(exitItem);
-
-            // 🧾 Edit Menu
             editMenu = new ToolStripMenuItem("Edit");
-            var addUserItem = new ToolStripMenuItem("Add User");
-            addUserItem.Click += addUserToolStripMenuItem_Click;
-            var editUserItem = new ToolStripMenuItem("Edit User");
-            editUserItem.Click += editUserToolStripMenuItem_Click;
-            var suspendUserItem = new ToolStripMenuItem("Suspend User");
-            suspendUserItem.Click += suspendUserToolStripMenuItem_Click;
-            var unsuspendUserItem = new ToolStripMenuItem("Unsuspend User");
-            unsuspendUserItem.Click += unsuspendUserToolStripMenuItem_Click;
-            var deleteUserItem = new ToolStripMenuItem("Delete User");
-            deleteUserItem.Click += deleteUserToolStripMenuItem_Click;
-            editMenu.DropDownItems.Add(addUserItem);
-            editMenu.DropDownItems.Add(editUserItem);
-            editMenu.DropDownItems.Add(suspendUserItem);
-            editMenu.DropDownItems.Add(unsuspendUserItem);
-            editMenu.DropDownItems.Add(deleteUserItem);
+
+            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Configuration", null, configurationToolStripMenuItem_Click));
+            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Exit Program", null, (_, _) => Application.Exit()));
+
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Add User", null, addUserToolStripMenuItem_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Edit User", null, editUserToolStripMenuItem_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Suspend User", null, suspendUserToolStripMenuItem_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Unsuspend User", null, unsuspendUserToolStripMenuItem_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Delete User", null, deleteUserToolStripMenuItem_Click));
 
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(editMenu);
             this.MainMenuStrip = menuStrip;
             this.Controls.Add(menuStrip);
 
-            // 📋 User Grid Setup
+            // User Grid
             userGrid = new DataGridView
             {
                 Top = menuStrip.Height + 10,
@@ -109,17 +94,15 @@ namespace PVLConsoleApp.Forms
 
         private void addUserToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            var form = new UserRegistrationForm();
+            using var form = new UserRegistrationForm();
             form.ShowDialog();
-            form.Dispose();
             LoadUsers();
         }
 
         private void configurationToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            var form = new ConfigurationForm();
+            using var form = new ConfigurationForm();
             form.ShowDialog();
-            form.Dispose();
         }
 
         private void editUserToolStripMenuItem_Click(object? sender, EventArgs e)
@@ -140,22 +123,21 @@ namespace PVLConsoleApp.Forms
                 return;
             }
 
-            var form = new EditUserForm(user.Username, user.Email, user.AccessLevel, user.CustomerCode, user.Company);
+            using var form = new EditUserForm(
+                user.Username,
+                user.Email,
+                user.AccessLevel,
+                user.CustomerCode,
+                user.Company,
+                user.FirstName,
+                user.LastName);
             form.ShowDialog();
-            form.Dispose();
             LoadUsers();
         }
 
         private void suspendUserToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            if (userGrid is null || userGrid.SelectedRows.Count == 0)
-            {
-                MessageBox.Show("Select a user to suspend.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(username)) return;
+            if (!TryGetSelectedUsername(out var username)) return;
 
             UserService.SuspendUser(username);
             LoadUsers();
@@ -164,14 +146,7 @@ namespace PVLConsoleApp.Forms
 
         private void unsuspendUserToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            if (userGrid is null || userGrid.SelectedRows.Count == 0)
-            {
-                MessageBox.Show("Select a user to unsuspend.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(username)) return;
+            if (!TryGetSelectedUsername(out var username)) return;
 
             UserService.UnsuspendUser(username);
             LoadUsers();
@@ -180,14 +155,7 @@ namespace PVLConsoleApp.Forms
 
         private void deleteUserToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            if (userGrid is null || userGrid.SelectedRows.Count == 0)
-            {
-                MessageBox.Show("Select a user to delete.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(username)) return;
+            if (!TryGetSelectedUsername(out var username)) return;
 
             var confirm = MessageBox.Show($"Delete user '{username}' and their folder?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (confirm == DialogResult.Yes)
@@ -196,6 +164,19 @@ namespace PVLConsoleApp.Forms
                 LoadUsers();
                 MessageBox.Show($"User '{username}' deleted.", "Delete User", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private bool TryGetSelectedUsername(out string username)
+        {
+            username = string.Empty;
+            if (userGrid is null || userGrid.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Select a user first.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString() ?? string.Empty;
+            return !string.IsNullOrWhiteSpace(username);
         }
     }
 }

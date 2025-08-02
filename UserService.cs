@@ -120,6 +120,22 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
+        public static bool UpdateName(string username, string firstName, string lastName)
+        {
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SQLiteCommand(@"
+                UPDATE users 
+                SET 
+                    firstName = @fn,
+                    lastName = @ln
+                WHERE username = @u;", conn);
+
+            cmd.Parameters.AddWithValue("@u", username);
+            cmd.Parameters.AddWithValue("@fn", firstName);
+            cmd.Parameters.AddWithValue("@ln", lastName);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
         public static bool UpdatePassword(string username, string newPassword)
         {
             if (!UserExists(username)) return false;

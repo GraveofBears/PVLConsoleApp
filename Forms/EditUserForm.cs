@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using AuthServerTool.Services;
@@ -7,26 +8,30 @@ namespace AuthServerTool.Forms
 {
     public partial class EditUserForm : Form
     {
-        private readonly string _username;
-
-        public EditUserForm(string username, string currentEmail, string currentAccess, string customerCode, string company)
+        public EditUserForm(string username, string currentEmail, string currentAccess, string customerCode,
+                            string company, string firstName, string lastName)
         {
             InitializeComponent();
-            _username = username;
             this.Text = $"Edit User: {username}";
 
-            customerCodeInput.Text = customerCode;
-            companyInput.Text = company;
+            usernameInput.Text = username;
             emailInput.Text = currentEmail;
             accessDropdown.SelectedItem = currentAccess;
+            customerCodeInput.Text = customerCode;
+            companyInput.Text = company;
+            firstNameInput.Text = firstName;
+            lastNameInput.Text = lastName;
         }
 
         private void saveButton_Click(object? sender, EventArgs e)
         {
+            var updatedUsername = usernameInput.Text.Trim();
             var updatedEmail = emailInput.Text.Trim();
             var updatedAccess = accessDropdown.SelectedItem?.ToString();
             var updatedCustomerCode = customerCodeInput.Text.Trim();
             var updatedCompany = companyInput.Text.Trim();
+            var updatedFirstName = firstNameInput.Text.Trim();
+            var updatedLastName = lastNameInput.Text.Trim();
             var newPassword = passwordInput.Text;
 
             if (!IsValidEmail(updatedEmail))
@@ -35,15 +40,17 @@ namespace AuthServerTool.Forms
                 return;
             }
 
-            bool infoUpdated = UserService.EditUser(_username, updatedEmail, updatedAccess, updatedCustomerCode, updatedCompany);
+            bool infoUpdated = UserService.EditUser(updatedUsername, updatedEmail, updatedAccess,
+                                                    updatedCustomerCode, updatedCompany);
+            bool nameUpdated = UserService.UpdateName(updatedUsername, updatedFirstName, updatedLastName);
             bool passwordUpdated = false;
 
             if (!string.IsNullOrWhiteSpace(newPassword))
             {
-                passwordUpdated = UserService.UpdatePassword(_username, newPassword);
+                passwordUpdated = UserService.UpdatePassword(updatedUsername, newPassword);
             }
 
-            string result = (infoUpdated || passwordUpdated)
+            string result = (infoUpdated || nameUpdated || passwordUpdated)
                 ? "User updated successfully."
                 : "No changes were made.";
 
@@ -59,3 +66,4 @@ namespace AuthServerTool.Forms
         }
     }
 }
+#nullable restore

@@ -1,6 +1,4 @@
-﻿using System.Windows.Forms;
-
-namespace AuthServerTool.Forms
+﻿namespace AuthServerTool.Forms
 {
     partial class UserRegistrationForm
     {
@@ -25,98 +23,80 @@ namespace AuthServerTool.Forms
 
         private void InitializeComponent()
         {
-            // 💡 Form setup
             this.Text = "Register New User";
-            this.Width = 440;
-            this.Height = 520;
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.ClientSize = new System.Drawing.Size(300, 520);
 
-            int left = 20;
-            int width = 380;
-            int spacing = 35;
-            int top = 20;
+            int x = 20, width = 250, labelHeight = 15, inputHeight = 23;
+            int y = 20, pad = 5;
 
-            // 👤 Username
-            usernameLabel = new Label { Text = "Username:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            usernameInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            // Helper to position controls cleanly
+            void Place(Control label, Control input)
+            {
+                label.Location = new System.Drawing.Point(x, y);
+                label.Size = new System.Drawing.Size(width, labelHeight);
+                y += labelHeight + pad;
+                input.Location = new System.Drawing.Point(x, y);
+                input.Size = new System.Drawing.Size(width, inputHeight);
+                y += inputHeight + pad * 2;
+                this.Controls.Add(label);
+                this.Controls.Add(input);
+            }
 
-            // 🔐 Password
-            passwordLabel = new Label { Text = "Password:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            passwordInput = new TextBox { Top = top, Left = left, Width = width, UseSystemPasswordChar = true };
-            top += spacing;
+            usernameLabel = new Label { Text = "Username:" };
+            usernameInput = new TextBox { Name = "usernameInput" };
+            Place(usernameLabel, usernameInput);
 
-            // 📧 Email
-            emailLabel = new Label { Text = "Email:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            emailInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            passwordLabel = new Label { Text = "Password:" };
+            passwordInput = new TextBox { Name = "passwordInput", PasswordChar = '*' };
+            Place(passwordLabel, passwordInput);
 
-            // 🧾 Customer Code
-            customerCodeLabel = new Label { Text = "Customer Code:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            customerCodeInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            emailLabel = new Label { Text = "Email:" };
+            emailInput = new TextBox { Name = "emailInput" };
+            Place(emailLabel, emailInput);
 
-            // 🧍 First Name
-            firstNameLabel = new Label { Text = "First Name:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            firstNameInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            customerCodeLabel = new Label { Text = "Customer Code:" };
+            customerCodeInput = new TextBox { Name = "customerCodeInput" };
+            Place(customerCodeLabel, customerCodeInput);
 
-            // 🧍 Last Name
-            lastNameLabel = new Label { Text = "Last Name:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            lastNameInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            firstNameLabel = new Label { Text = "First Name:" };
+            firstNameInput = new TextBox { Name = "firstNameInput" };
+            Place(firstNameLabel, firstNameInput);
 
-            // 🏢 Company
-            companyLabel = new Label { Text = "Company:", Top = top, Left = left, AutoSize = true };
-            top += 20;
-            companyInput = new TextBox { Top = top, Left = left, Width = width };
-            top += spacing;
+            lastNameLabel = new Label { Text = "Last Name:" };
+            lastNameInput = new TextBox { Name = "lastNameInput" };
+            Place(lastNameLabel, lastNameInput);
 
-            // 🧭 Access Level
-            accessLevelLabel = new Label { Text = "Access Level:", Top = top, Left = left, AutoSize = true };
-            top += 20;
+            companyLabel = new Label { Text = "Company:" };
+            companyInput = new TextBox { Name = "companyInput" };
+            Place(companyLabel, companyInput);
+
+            accessLevelLabel = new Label { Text = "Access Level:" };
             accessLevelDropdown = new ComboBox
             {
-                Top = top,
-                Left = left,
-                Width = width,
+                Name = "accessLevelDropdown",
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             accessLevelDropdown.Items.AddRange(new string[] { "user", "admin", "moderator" });
             accessLevelDropdown.SelectedIndex = 0;
-            top += spacing;
+            Place(accessLevelLabel, accessLevelDropdown);
 
-            // 🧹 Clear
-            clearButton = new Button { Text = "Clear", Top = top, Left = left, Width = 100 };
+            clearButton = new Button
+            {
+                Text = "Clear",
+                Width = 100,
+                Location = new System.Drawing.Point(x, y)
+            };
             clearButton.Click += ClearButton_Click;
 
-            // ✅ Register
-            registerButton = new Button { Text = "Register", Top = top, Left = left + 280, Width = 100 };
+            registerButton = new Button
+            {
+                Text = "Register",
+                Width = 100,
+                Location = new System.Drawing.Point(x + 150, y)
+            };
             registerButton.Click += RegisterButton_Click;
 
-            // 📦 Add to form
-            this.Controls.Add(usernameLabel);
-            this.Controls.Add(usernameInput);
-            this.Controls.Add(passwordLabel);
-            this.Controls.Add(passwordInput);
-            this.Controls.Add(emailLabel);
-            this.Controls.Add(emailInput);
-            this.Controls.Add(customerCodeLabel);
-            this.Controls.Add(customerCodeInput);
-            this.Controls.Add(firstNameLabel);
-            this.Controls.Add(firstNameInput);
-            this.Controls.Add(lastNameLabel);
-            this.Controls.Add(lastNameInput);
-            this.Controls.Add(companyLabel);
-            this.Controls.Add(companyInput);
-            this.Controls.Add(accessLevelLabel);
-            this.Controls.Add(accessLevelDropdown);
             this.Controls.Add(clearButton);
             this.Controls.Add(registerButton);
         }
