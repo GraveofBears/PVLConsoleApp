@@ -16,8 +16,6 @@
         private TextBox lastNameInput;
         private Label companyLabel;
         private TextBox companyInput;
-        private Label accessLevelLabel;
-        private ComboBox accessLevelDropdown;
         private Button registerButton;
         private Button clearButton;
 
@@ -71,15 +69,6 @@
             companyInput = new TextBox { Name = "companyInput" };
             Place(companyLabel, companyInput);
 
-            accessLevelLabel = new Label { Text = "Access Level:" };
-            accessLevelDropdown = new ComboBox
-            {
-                Name = "accessLevelDropdown",
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            accessLevelDropdown.Items.AddRange(new string[] { "user", "admin", "moderator" });
-            accessLevelDropdown.SelectedIndex = 0;
-            Place(accessLevelLabel, accessLevelDropdown);
 
             clearButton = new Button
             {

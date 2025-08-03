@@ -1,7 +1,11 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Text.Json;
 using System.Windows.Forms;
+using AuthServerTool.Models;
 using AuthServerTool.Services;
 using AuthServerTool.Forms;
 
@@ -9,174 +13,245 @@ namespace PVLConsoleApp.Forms
 {
     public class MainForm : Form
     {
-        private DataGridView? userGrid;
-        private MenuStrip? menuStrip;
-        private ToolStripMenuItem? fileMenu;
-        private ToolStripMenuItem? editMenu;
+        private readonly ListView userListView = new();
+        private readonly MenuStrip menuStrip = new();
+
+        private const string ConfigPath = "config.json";
+
+        private class Config
+        {
+            public string UserRootFolder { get; set; } = "Users";
+        }
+
+        private Config config = new();
 
         public MainForm()
         {
-            InitializeUI();
-            LoadUsers();
+            Text = "User Manager";
+            Size = new Size(800, 600);
+            StartPosition = FormStartPosition.CenterScreen;
+
+            LoadConfig();
+            InitializeMenu();
+            InitializeControls();
+
+            MainMenuStrip = menuStrip;
+            Load += MainForm_Load;
         }
 
-        private void InitializeUI()
+        private void LoadConfig()
         {
-            this.Text = "PVL Console App";
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.Size = new Size(800, 500);
+            if (File.Exists(ConfigPath))
+            {
+                var json = File.ReadAllText(ConfigPath);
+                config = JsonSerializer.Deserialize<Config>(json) ?? new Config();
+            }
+        }
 
-            // Menu Strip
-            menuStrip = new MenuStrip();
-            fileMenu = new ToolStripMenuItem("File");
-            editMenu = new ToolStripMenuItem("Edit");
+        private void SaveConfig()
+        {
+            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(ConfigPath, json);
+        }
 
-            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Configuration", null, configurationToolStripMenuItem_Click));
-            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Exit Program", null, (_, _) => Application.Exit()));
+        private void InitializeMenu()
+        {
+            var fileMenu = new ToolStripMenuItem("File");
 
-            editMenu.DropDownItems.Add(new ToolStripMenuItem("Add User", null, addUserToolStripMenuItem_Click));
-            editMenu.DropDownItems.Add(new ToolStripMenuItem("Edit User", null, editUserToolStripMenuItem_Click));
-            editMenu.DropDownItems.Add(new ToolStripMenuItem("Suspend User", null, suspendUserToolStripMenuItem_Click));
-            editMenu.DropDownItems.Add(new ToolStripMenuItem("Unsuspend User", null, unsuspendUserToolStripMenuItem_Click));
-            editMenu.DropDownItems.Add(new ToolStripMenuItem("Delete User", null, deleteUserToolStripMenuItem_Click));
+            var configureItem = new ToolStripMenuItem("Configure");
+            configureItem.Click += ConfigureItem_Click;
+
+            var exitItem = new ToolStripMenuItem("Exit");
+            exitItem.Click += (_, _) => Close();
+
+            fileMenu.DropDownItems.Add(configureItem);
+            fileMenu.DropDownItems.Add(exitItem);
+
+            var editMenu = new ToolStripMenuItem("Edit");
+
+            var addItem = new ToolStripMenuItem("Add New User");
+            addItem.Click += AddUser_Click;
+
+            var editItem = new ToolStripMenuItem("Edit Selected User");
+            editItem.Click += EditUser_Click;
+
+            var suspendItem = new ToolStripMenuItem("Suspend Selected User");
+            suspendItem.Click += SuspendUser_Click;
+
+            var unsuspendItem = new ToolStripMenuItem("Unsuspend Selected User");
+            unsuspendItem.Click += UnsuspendUser_Click;
+
+            var deleteItem = new ToolStripMenuItem("Delete Selected User");
+            deleteItem.Click += DeleteUser_Click;
+
+            editMenu.DropDownItems.Add(addItem);
+            editMenu.DropDownItems.Add(editItem);
+            editMenu.DropDownItems.Add(suspendItem);
+            editMenu.DropDownItems.Add(unsuspendItem);
+            editMenu.DropDownItems.Add(deleteItem);
 
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(editMenu);
-            this.MainMenuStrip = menuStrip;
-            this.Controls.Add(menuStrip);
-
-            // User Grid
-            userGrid = new DataGridView
-            {
-                Top = menuStrip.Height + 10,
-                Left = 10,
-                Width = this.ClientSize.Width - 20,
-                Height = this.ClientSize.Height - menuStrip.Height - 20,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-            };
-
-            userGrid.Columns.Add("CustomerCode", "Customer Code");
-            userGrid.Columns.Add("Username", "Username");
-            userGrid.Columns.Add("Company", "Company");
-            userGrid.Columns.Add("Status", "Active/Suspended");
-
-            userGrid.SortCompare += (s, e) =>
-            {
-                e.SortResult = string.Compare(e.CellValue1?.ToString(), e.CellValue2?.ToString(), StringComparison.OrdinalIgnoreCase);
-                e.Handled = true;
-            };
-
-            this.Controls.Add(userGrid);
+            Controls.Add(menuStrip);
         }
 
-        private void LoadUsers()
+        private void InitializeControls()
         {
-            if (userGrid is null) return;
-            userGrid.Rows.Clear();
+            userListView.Location = new Point(20, menuStrip.Height + 20);
+            userListView.Size = new Size(740, 500);
+            userListView.View = View.Details;
+            userListView.FullRowSelect = true;
+            userListView.GridLines = true;
 
-            var users = UserService.GetAllUsers();
-            foreach (var user in users)
+            userListView.Columns.Add("Customer Code", 120);
+            userListView.Columns.Add("Username", 120);
+            userListView.Columns.Add("Company", 180);
+            userListView.Columns.Add("Status", 100);
+
+            Controls.Add(userListView);
+        }
+
+        private void MainForm_Load(object? sender, EventArgs e)
+        {
+            RefreshUserList();
+        }
+
+        private void RefreshUserList()
+        {
+            try
             {
-                string status = user.IsSuspended ? "Suspended" : "Active";
-                int rowIndex = userGrid.Rows.Add(user.CustomerCode, user.Username, user.Company, status);
+                var users = UserService.GetAllUsers();
+                userListView.Items.Clear();
 
-                if (user.IsSuspended)
+                foreach (var user in users)
                 {
-                    userGrid.Rows[rowIndex].DefaultCellStyle.ForeColor = Color.Red;
-                    userGrid.Rows[rowIndex].DefaultCellStyle.Font = new Font(userGrid.Font, FontStyle.Bold);
+                    var item = new ListViewItem(user.CustomerCode);
+                    item.SubItems.Add(user.Username);
+                    item.SubItems.Add(user.Company);
+                    item.SubItems.Add(user.IsSuspended ? "Suspended" : "Active");
+                    item.Tag = user;
+                    userListView.Items.Add(item);
                 }
             }
-        }
-
-        private void addUserToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            using var form = new UserRegistrationForm();
-            form.ShowDialog();
-            LoadUsers();
-        }
-
-        private void configurationToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            using var form = new ConfigurationForm();
-            form.ShowDialog();
-        }
-
-        private void editUserToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            if (userGrid is null || userGrid.SelectedRows.Count == 0)
+            catch (Exception ex)
             {
-                MessageBox.Show("Select a user to edit.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                MessageBox.Show($"Failed to load users:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
 
-            var username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(username)) return;
+        private void ConfigureItem_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new FolderBrowserDialog();
+            dialog.Description = "Select Root User Folder";
+            dialog.SelectedPath = config.UserRootFolder;
 
-            var user = UserService.GetAllUsers().Find(u => u.Username == username);
-            if (user == null)
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
-                MessageBox.Show("User not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                config.UserRootFolder = dialog.SelectedPath;
+                SaveConfig();
+                MessageBox.Show($"Root folder updated:\n{config.UserRootFolder}", "Configured");
             }
+        }
 
-            using var form = new EditUserForm(
+private void AddUser_Click(object? sender, EventArgs e)
+{
+    using var dialog = new UserRegistrationForm();
+    if (dialog.ShowDialog() == DialogResult.OK)
+    {
+        if (!string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
+        {
+            var folderPath = Path.Combine(config.UserRootFolder, dialog.RegisteredUsername);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+        }
+
+        RefreshUserList();
+        MessageBox.Show("User registered and folder created.", "Success");
+    }
+}
+
+
+        private void EditUser_Click(object? sender, EventArgs e)
+        {
+            if (!TryGetSelectedUser(out var user)) return;
+
+            using var dialog = new EditUserForm(
                 user.Username,
-                user.Email,
-                user.AccessLevel,
-                user.CustomerCode,
-                user.Company,
+                user.PasswordHash,
                 user.FirstName,
-                user.LastName);
-            form.ShowDialog();
-            LoadUsers();
-        }
+                user.LastName,
+                user.Email,
+                user.CustomerCode // used as 'id'
+            );
 
-        private void suspendUserToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            if (!TryGetSelectedUsername(out var username)) return;
 
-            UserService.SuspendUser(username);
-            LoadUsers();
-            MessageBox.Show($"User '{username}' has been suspended.", "Suspend User", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
 
-        private void unsuspendUserToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            if (!TryGetSelectedUsername(out var username)) return;
 
-            UserService.UnsuspendUser(username);
-            LoadUsers();
-            MessageBox.Show($"User '{username}' has been unsuspended.", "Unsuspend User", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void deleteUserToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            if (!TryGetSelectedUsername(out var username)) return;
-
-            var confirm = MessageBox.Show($"Delete user '{username}' and their folder?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (confirm == DialogResult.Yes)
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
-                UserService.DeleteUser(username);
-                LoadUsers();
-                MessageBox.Show($"User '{username}' deleted.", "Delete User", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RefreshUserList();
+                MessageBox.Show("User updated.");
             }
         }
 
-        private bool TryGetSelectedUsername(out string username)
+        private void SuspendUser_Click(object? sender, EventArgs e)
         {
-            username = string.Empty;
-            if (userGrid is null || userGrid.SelectedRows.Count == 0)
+            if (!TryGetSelectedUser(out var user)) return;
+            if (user.IsSuspended) return;
+
+            if (UserService.SuspendUser(user.Username))
             {
-                MessageBox.Show("Select a user first.", "No User Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                RefreshUserList();
+                MessageBox.Show("User suspended.");
+            }
+        }
+
+        private void UnsuspendUser_Click(object? sender, EventArgs e)
+        {
+            if (!TryGetSelectedUser(out var user)) return;
+            if (!user.IsSuspended) return;
+
+            if (UserService.UnsuspendUser(user.Username))
+            {
+                RefreshUserList();
+                MessageBox.Show("User unsuspended.");
+            }
+        }
+
+        private void DeleteUser_Click(object? sender, EventArgs e)
+        {
+            if (!TryGetSelectedUser(out var user)) return;
+
+            var confirm = MessageBox.Show($"Delete user '{user.Username}' and their folder?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (confirm != DialogResult.Yes) return;
+
+            if (UserService.DeleteUser(user.Username))
+            {
+                var folder = Path.Combine(config.UserRootFolder, user.Username);
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+
+                RefreshUserList();
+                MessageBox.Show("User and folder deleted.");
+            }
+            else
+            {
+                MessageBox.Show("Deletion failed.");
+            }
+        }
+
+        private bool TryGetSelectedUser(out User user)
+        {
+            user = null!;
+            if (userListView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a user first.", "Info");
                 return false;
             }
 
-            username = userGrid.SelectedRows[0].Cells["Username"].Value?.ToString() ?? string.Empty;
-            return !string.IsNullOrWhiteSpace(username);
+            user = userListView.SelectedItems[0].Tag as User;
+            return user != null;
         }
     }
 }

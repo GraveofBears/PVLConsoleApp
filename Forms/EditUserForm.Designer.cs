@@ -1,25 +1,28 @@
-﻿namespace AuthServerTool.Forms
+﻿#nullable enable
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace AuthServerTool.Forms
 {
     partial class EditUserForm
     {
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Label usernameLabel;
-        private System.Windows.Forms.TextBox usernameInput;
-        private System.Windows.Forms.Label firstNameLabel;
-        private System.Windows.Forms.TextBox firstNameInput;
-        private System.Windows.Forms.Label lastNameLabel;
-        private System.Windows.Forms.TextBox lastNameInput;
-        private System.Windows.Forms.Label emailLabel;
-        private System.Windows.Forms.TextBox emailInput;
-        private System.Windows.Forms.Label customerCodeLabel;
-        private System.Windows.Forms.TextBox customerCodeInput;
-        private System.Windows.Forms.Label companyLabel;
-        private System.Windows.Forms.TextBox companyInput;
-        private System.Windows.Forms.Label accessLabel;
-        private System.Windows.Forms.ComboBox accessDropdown;
-        private System.Windows.Forms.Label passwordLabel;
-        private System.Windows.Forms.TextBox passwordInput;
-        private System.Windows.Forms.Button saveButton;
+        private Label usernameLabel;
+        private TextBox usernameInput;
+        private Label firstNameLabel;
+        private TextBox firstNameInput;
+        private Label lastNameLabel;
+        private TextBox lastNameInput;
+        private Label emailLabel;
+        private TextBox emailInput;
+        private Label customerCodeLabel;
+        private TextBox customerCodeInput;
+        private Label companyLabel;
+        private TextBox companyInput;
+        private Label passwordLabel;
+        private TextBox passwordInput;
+        private Button saveButton;
 
         protected override void Dispose(bool disposing)
         {
@@ -29,29 +32,29 @@
 
         private void InitializeComponent()
         {
-            this.usernameLabel = new Label();
-            this.usernameInput = new TextBox();
-            this.firstNameLabel = new Label();
-            this.firstNameInput = new TextBox();
-            this.lastNameLabel = new Label();
-            this.lastNameInput = new TextBox();
-            this.emailLabel = new Label();
-            this.emailInput = new TextBox();
-            this.customerCodeLabel = new Label();
-            this.customerCodeInput = new TextBox();
-            this.companyLabel = new Label();
-            this.companyInput = new TextBox();
-            this.accessLabel = new Label();
-            this.accessDropdown = new ComboBox();
-            this.passwordLabel = new Label();
-            this.passwordInput = new TextBox();
-            this.saveButton = new Button();
-            this.SuspendLayout();
+            components = new System.ComponentModel.Container();
+
+            usernameLabel = new Label();
+            usernameInput = new TextBox();
+            firstNameLabel = new Label();
+            firstNameInput = new TextBox();
+            lastNameLabel = new Label();
+            lastNameInput = new TextBox();
+            emailLabel = new Label();
+            emailInput = new TextBox();
+            customerCodeLabel = new Label();
+            customerCodeInput = new TextBox();
+            companyLabel = new Label();
+            companyInput = new TextBox();
+            passwordLabel = new Label();
+            passwordInput = new TextBox();
+            saveButton = new Button();
+
+            SuspendLayout();
 
             int x = 20, width = 250, labelHeight = 15, inputHeight = 23;
             int y = 20, padding = 5;
 
-            // Utility method for label & input positioning
             void PlaceControl(Control label, Control input)
             {
                 label.Location = new Point(x, y);
@@ -60,8 +63,8 @@
                 input.Location = new Point(x, y);
                 input.Size = new Size(width, inputHeight);
                 y += inputHeight + padding * 2;
-                this.Controls.Add(label);
-                this.Controls.Add(input);
+                Controls.Add(label);
+                Controls.Add(input);
             }
 
             // Username
@@ -94,12 +97,6 @@
             companyInput.Name = "companyInput";
             PlaceControl(companyLabel, companyInput);
 
-            // Access Level
-            accessLabel.Text = "Access Level:";
-            accessDropdown.DropDownStyle = ComboBoxStyle.DropDownList;
-            accessDropdown.Name = "accessDropdown";
-            PlaceControl(accessLabel, accessDropdown);
-
             // Password
             passwordLabel.Text = "New Password (optional):";
             passwordInput.Name = "passwordInput";
@@ -111,14 +108,15 @@
             saveButton.Name = "saveButton";
             saveButton.Size = new Size(width, 30);
             saveButton.Location = new Point(x, y);
-            saveButton.Click += new EventHandler(this.saveButton_Click);
-            this.Controls.Add(saveButton);
+            saveButton.Click += new EventHandler(saveButton_Click);
+            Controls.Add(saveButton);
 
-            // EditUserForm
-            this.ClientSize = new Size(300, saveButton.Bottom + 20);
-            this.Name = "EditUserForm";
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            // Form
+            ClientSize = new Size(300, saveButton.Bottom + 20);
+            Name = "EditUserForm";
+            ResumeLayout(false);
+            PerformLayout();
         }
     }
 }
+#nullable restore

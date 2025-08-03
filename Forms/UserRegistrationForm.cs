@@ -1,5 +1,8 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.IO;
 using System.Net.Mail;
+using System.Text.Json;
 using System.Windows.Forms;
 using AuthServerTool.Models;
 using AuthServerTool.Services;
@@ -8,12 +11,34 @@ namespace AuthServerTool.Forms
 {
     public partial class UserRegistrationForm : Form
     {
+        // 👤 Exposed property for MainForm to access after registration
+        public string RegisteredUsername { get; private set; } = string.Empty;
+
+        private const string ConfigPath = "config.json";
+
+        private class Config
+        {
+            public string UserRootFolder { get; set; } = "Users";
+        }
+
+        private Config config = new();
+
         public UserRegistrationForm()
         {
             InitializeComponent();
+            LoadConfig();
         }
 
-        private void RegisterButton_Click(object? sender, EventArgs e)
+        private void LoadConfig()
+        {
+            if (File.Exists(ConfigPath))
+            {
+                var json = File.ReadAllText(ConfigPath);
+                config = JsonSerializer.Deserialize<Config>(json) ?? new Config();
+            }
+        }
+
+        private void RegisterButton_Click(object sender, EventArgs e)
         {
             var username = usernameInput.Text.Trim();
             var password = passwordInput.Text;
@@ -22,7 +47,6 @@ namespace AuthServerTool.Forms
             var firstName = firstNameInput.Text.Trim();
             var lastName = lastNameInput.Text.Trim();
             var company = companyInput.Text.Trim();
-            var accessLevel = accessLevelDropdown.SelectedItem?.ToString() ?? "user";
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) ||
                 string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(customerCode) ||
@@ -47,14 +71,24 @@ namespace AuthServerTool.Forms
                 LastName = lastName,
                 Email = email,
                 Company = company,
-                AccessLevel = accessLevel
+                PasswordHash = "temp-placeholder"
             };
 
             bool success = UserService.AddNewUser(newUser, password);
 
             if (success)
             {
-                MessageBox.Show("User registered successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RegisteredUsername = username;
+
+                // 🗂 Create folder in configured location
+                var folderPath = Path.Combine(config.UserRootFolder, username);
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                MessageBox.Show("User registered and folder created successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             else
@@ -63,7 +97,7 @@ namespace AuthServerTool.Forms
             }
         }
 
-        private void ClearButton_Click(object? sender, EventArgs e)
+        private void ClearButton_Click(object sender, EventArgs e)
         {
             usernameInput.Text = string.Empty;
             passwordInput.Text = string.Empty;
@@ -72,7 +106,7 @@ namespace AuthServerTool.Forms
             firstNameInput.Text = string.Empty;
             lastNameInput.Text = string.Empty;
             companyInput.Text = string.Empty;
-            accessLevelDropdown.SelectedIndex = 0;
         }
     }
 }
+#nullable restore

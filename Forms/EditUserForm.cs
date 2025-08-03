@@ -8,17 +8,24 @@ namespace AuthServerTool.Forms
 {
     public partial class EditUserForm : Form
     {
-        public EditUserForm(string username, string currentEmail, string currentAccess, string customerCode,
-                            string company, string firstName, string lastName)
+        // Public accessor for the entered username
+        public string EnteredUsername => usernameInput.Text.Trim();
+
+        public EditUserForm(
+            string username,
+            string passwordHash,
+            string firstName,
+            string lastName,
+            string email,
+            string customerCode)
         {
             InitializeComponent();
             this.Text = $"Edit User: {username}";
 
             usernameInput.Text = username;
-            emailInput.Text = currentEmail;
-            accessDropdown.SelectedItem = currentAccess;
+            emailInput.Text = email;
             customerCodeInput.Text = customerCode;
-            companyInput.Text = company;
+            companyInput.Text = string.Empty; // Optional: Remove this line if Company input was deleted
             firstNameInput.Text = firstName;
             lastNameInput.Text = lastName;
         }
@@ -27,9 +34,8 @@ namespace AuthServerTool.Forms
         {
             var updatedUsername = usernameInput.Text.Trim();
             var updatedEmail = emailInput.Text.Trim();
-            var updatedAccess = accessDropdown.SelectedItem?.ToString();
             var updatedCustomerCode = customerCodeInput.Text.Trim();
-            var updatedCompany = companyInput.Text.Trim();
+            var updatedCompany = companyInput.Text.Trim(); // Optional: Remove if Company no longer used
             var updatedFirstName = firstNameInput.Text.Trim();
             var updatedLastName = lastNameInput.Text.Trim();
             var newPassword = passwordInput.Text;
@@ -40,8 +46,7 @@ namespace AuthServerTool.Forms
                 return;
             }
 
-            bool infoUpdated = UserService.EditUser(updatedUsername, updatedEmail, updatedAccess,
-                                                    updatedCustomerCode, updatedCompany);
+            bool infoUpdated = UserService.EditUser(updatedUsername, updatedEmail, updatedCustomerCode, updatedCompany);
             bool nameUpdated = UserService.UpdateName(updatedUsername, updatedFirstName, updatedLastName);
             bool passwordUpdated = false;
 

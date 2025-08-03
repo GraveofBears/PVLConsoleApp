@@ -31,7 +31,6 @@ namespace AuthServerTool
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL UNIQUE,
                     passwordHash TEXT NOT NULL,
-                    accessLevel TEXT DEFAULT 'user',
                     email TEXT NOT NULL,
                     isSuspended INTEGER DEFAULT 0,
                     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
@@ -78,7 +77,7 @@ namespace AuthServerTool
             {
                 cmd.CommandText = @"
                     INSERT INTO users (
-                        username, passwordHash, accessLevel, email, isSuspended,
+                        username, passwordHash, email, isSuspended,
                         customerCode, company, firstName, lastName
                     ) VALUES (
                         'AdminUser', 'placeholderHash', 'Admin', 'admin@example.com', 0,

@@ -1,39 +1,39 @@
-﻿namespace AuthServerTool.Models
+﻿#nullable enable
+using System;
+
+namespace AuthServerTool.Models
 {
-#nullable enable
     public class User
     {
-        public int Id { get; set; }
-
-        // Required identity fields
-        public required string Username { get; set; }
-        public required string CustomerCode { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public required string Email { get; set; }
-        public required string Company { get; set; }
-        public required string AccessLevel { get; set; }
-
-        // Lifecycle metadata
+        // Required properties
+        public string Username { get; set; } = string.Empty;
+        public string CustomerCode { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // 🚫 Suspension flag (0 = active, 1 = suspended)
         public bool IsSuspended { get; set; } = false;
 
-        public override string ToString()
+        // Optional convenience constructor
+        public User(
+            string username,
+            string customerCode,
+            string firstName,
+            string lastName,
+            string email,
+            string company)
         {
-            return $"{CustomerCode} - {Username} ({Company})" + (IsSuspended ? " [Suspended]" : "");
+            Username = username;
+            CustomerCode = customerCode;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            Company = company;
         }
 
-        public override bool Equals(object? obj)
-        {
-            return obj is User other && Username == other.Username;
-        }
-
-        public override int GetHashCode()
-        {
-            return Username.GetHashCode();
-        }
+        public User() { }
     }
-#nullable restore
 }
+#nullable restore
