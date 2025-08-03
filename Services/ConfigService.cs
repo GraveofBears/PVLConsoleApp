@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Collections.Generic;
 
@@ -8,7 +9,7 @@ namespace AuthServerTool.Services
     {
         private const string ConfigFile = "appsettings.json";
 
-        // ✅ Save encrypted API key to config
+        // 🔑 Save encrypted API key
         public static void SaveKey(string encryptedKey)
         {
             var config = LoadConfig();
@@ -16,14 +17,14 @@ namespace AuthServerTool.Services
             SaveConfig(config);
         }
 
-        // ✅ Retrieve encrypted API key
+        // 🔑 Load encrypted API key
         public static string LoadKey()
         {
             var config = LoadConfig();
             return config.TryGetValue("ApiKey", out var key) ? key : string.Empty;
         }
 
-        // 📂 Save root folder path for user directories
+        // 📁 Save user root folder path
         public static void SaveFolderPath(string path)
         {
             var config = LoadConfig();
@@ -31,33 +32,58 @@ namespace AuthServerTool.Services
             SaveConfig(config);
         }
 
-        // 📂 Load root folder path
+        // 📁 Load user root folder path
         public static string LoadFolderPath()
         {
             var config = LoadConfig();
             return config.TryGetValue("UserFolderPath", out var path) ? path : string.Empty;
         }
 
-        // 🧠 NEW: Generic config getter
+        // 💾 Save database path
+        public static void SaveDatabasePath(string path)
+        {
+            var config = LoadConfig();
+            config["DatabasePath"] = path;
+            SaveConfig(config);
+        }
+
+        // 💾 Load database path
+        public static string LoadDatabasePath()
+        {
+            var config = LoadConfig();
+            return config.TryGetValue("DatabasePath", out var path) ? path : string.Empty;
+        }
+
+        // 🧠 Generic get
         public static string Get(string key)
         {
             var config = LoadConfig();
             return config.TryGetValue(key, out var value) ? value : string.Empty;
         }
 
-        // 🧠 Internal helpers
+        // 🧠 Generic set
+        public static void Set(string key, string value)
+        {
+            var config = LoadConfig();
+            config[key] = value;
+            SaveConfig(config);
+        }
+
+        // 🛠 Load config file
         private static Dictionary<string, string> LoadConfig()
         {
             if (!File.Exists(ConfigFile))
                 return new Dictionary<string, string>();
 
             var json = File.ReadAllText(ConfigFile);
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
         }
 
+        // 🛠 Save config file
         private static void SaveConfig(Dictionary<string, string> config)
         {
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            var json = JsonSerializer.Serialize(config, options);
             File.WriteAllText(ConfigFile, json);
         }
     }

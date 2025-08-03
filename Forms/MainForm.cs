@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Text.Json;
 using System.Windows.Forms;
 using AuthServerTool.Models;
 using AuthServerTool.Services;
@@ -16,42 +15,17 @@ namespace PVLConsoleApp.Forms
         private readonly ListView userListView = new();
         private readonly MenuStrip menuStrip = new();
 
-        private const string ConfigPath = "config.json";
-
-        private class Config
-        {
-            public string UserRootFolder { get; set; } = "Users";
-        }
-
-        private Config config = new();
-
         public MainForm()
         {
             Text = "User Manager";
             Size = new Size(800, 600);
             StartPosition = FormStartPosition.CenterScreen;
 
-            LoadConfig();
             InitializeMenu();
             InitializeControls();
 
             MainMenuStrip = menuStrip;
             Load += MainForm_Load;
-        }
-
-        private void LoadConfig()
-        {
-            if (File.Exists(ConfigPath))
-            {
-                var json = File.ReadAllText(ConfigPath);
-                config = JsonSerializer.Deserialize<Config>(json) ?? new Config();
-            }
-        }
-
-        private void SaveConfig()
-        {
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ConfigPath, json);
         }
 
         private void InitializeMenu()
@@ -141,37 +115,29 @@ namespace PVLConsoleApp.Forms
 
         private void ConfigureItem_Click(object? sender, EventArgs e)
         {
-            using var dialog = new FolderBrowserDialog();
-            dialog.Description = "Select Root User Folder";
-            dialog.SelectedPath = config.UserRootFolder;
+            using var configDialog = new ConfigurationForm();
+            configDialog.ShowDialog();
+            RefreshUserList();
+        }
 
+        private void AddUser_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new UserRegistrationForm();
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                config.UserRootFolder = dialog.SelectedPath;
-                SaveConfig();
-                MessageBox.Show($"Root folder updated:\n{config.UserRootFolder}", "Configured");
+                if (!string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
+                {
+                    var folderPath = Path.Combine(ConfigService.LoadFolderPath(), dialog.RegisteredUsername);
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                    }
+                }
+
+                RefreshUserList();
+                MessageBox.Show("User registered and folder created.", "Success");
             }
         }
-
-private void AddUser_Click(object? sender, EventArgs e)
-{
-    using var dialog = new UserRegistrationForm();
-    if (dialog.ShowDialog() == DialogResult.OK)
-    {
-        if (!string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
-        {
-            var folderPath = Path.Combine(config.UserRootFolder, dialog.RegisteredUsername);
-            if (!Directory.Exists(folderPath))
-            {
-                Directory.CreateDirectory(folderPath);
-            }
-        }
-
-        RefreshUserList();
-        MessageBox.Show("User registered and folder created.", "Success");
-    }
-}
-
 
         private void EditUser_Click(object? sender, EventArgs e)
         {
@@ -186,9 +152,6 @@ private void AddUser_Click(object? sender, EventArgs e)
                 user.CustomerCode,
                 user.Company
             );
-
-
-
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
@@ -230,7 +193,7 @@ private void AddUser_Click(object? sender, EventArgs e)
 
             if (UserService.DeleteUser(user.Username))
             {
-                var folder = Path.Combine(config.UserRootFolder, user.Username);
+                var folder = Path.Combine(ConfigService.LoadFolderPath(), user.Username);
                 if (Directory.Exists(folder)) Directory.Delete(folder, true);
 
                 RefreshUserList();

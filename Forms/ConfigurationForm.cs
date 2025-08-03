@@ -1,51 +1,137 @@
-﻿using System;
-using System.Windows.Forms;
+﻿#nullable enable
+using AuthServerTool;
 using AuthServerTool.Services;
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 
-namespace AuthServerTool.Forms
+namespace PVLConsoleApp.Forms
 {
-#nullable disable
-    public partial class ConfigurationForm : Form
+    public class ConfigurationForm : Form
     {
+        private Label folderPathLabel;
+        private TextBox folderPathBox;
+        private Button userFolderButton;
+
+        private Label dbPathLabel;
+        private TextBox dbPathBox;
+        private Button dbPathButton;
+
+        private Button saveButton;
+
         public ConfigurationForm()
         {
             InitializeComponent();
-            this.Text = "User Folder Configuration";
-            this.StartPosition = FormStartPosition.CenterScreen;
 
-            // Load previously saved path if available
-            var currentPath = ConfigService.LoadFolderPath();
-            if (!string.IsNullOrWhiteSpace(currentPath))
-            {
-                folderPathInput.Text = currentPath;
-            }
+            folderPathBox.Text = ConfigService.LoadFolderPath();
+            dbPathBox.Text = ConfigService.LoadDatabasePath();
         }
 
-        private void browseButton_Click(object sender, EventArgs e)
+        private void InitializeComponent()
         {
-            using var folderDialog = new FolderBrowserDialog();
-            folderDialog.Description = "Select root directory for user folders";
+            this.folderPathLabel = new Label();
+            this.folderPathBox = new TextBox();
+            this.userFolderButton = new Button();
+            this.dbPathLabel = new Label();
+            this.dbPathBox = new TextBox();
+            this.dbPathButton = new Button();
+            this.saveButton = new Button();
 
-            if (folderDialog.ShowDialog() == DialogResult.OK)
-            {
-                folderPathInput.Text = folderDialog.SelectedPath;
-            }
+            // folderPathLabel
+            folderPathLabel.AutoSize = true;
+            folderPathLabel.Location = new Point(20, 20);
+            folderPathLabel.Text = "User Folder Root Path:";
+
+            // folderPathBox
+            folderPathBox.Location = new Point(20, 45);
+            folderPathBox.Width = 300;
+            folderPathBox.ReadOnly = true;
+
+            // userFolderButton
+            userFolderButton.Text = "Browse...";
+            userFolderButton.Location = new Point(330, 43);
+            userFolderButton.Click += UserFolderButton_Click;
+
+            // dbPathLabel
+            dbPathLabel.AutoSize = true;
+            dbPathLabel.Location = new Point(20, 85);
+            dbPathLabel.Text = "Database Path (.db):";
+
+            // dbPathBox
+            dbPathBox.Location = new Point(20, 110);
+            dbPathBox.Width = 300;
+
+            // dbPathButton
+            dbPathButton.Text = "Browse...";
+            dbPathButton.Location = new Point(330, 108);
+            dbPathButton.Click += DbPathButton_Click;
+
+            // saveButton
+            saveButton.Text = "Save";
+            saveButton.Location = new Point(280, 160);
+            saveButton.Click += SaveButton_Click;
+
+            // Form setup
+            this.ClientSize = new Size(420, 220);
+            this.Controls.Add(folderPathLabel);
+            this.Controls.Add(folderPathBox);
+            this.Controls.Add(userFolderButton);
+            this.Controls.Add(dbPathLabel);
+            this.Controls.Add(dbPathBox);
+            this.Controls.Add(dbPathButton);
+            this.Controls.Add(saveButton);
+            this.Text = "Configuration";
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        private void UserFolderButton_Click(object? sender, EventArgs e)
         {
-            var selectedPath = folderPathInput.Text;
-
-            if (string.IsNullOrWhiteSpace(selectedPath) || !System.IO.Directory.Exists(selectedPath))
+            using var dialog = new FolderBrowserDialog
             {
-                MessageBox.Show("Please select a valid directory.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Description = "Select folder for storing user directories",
+                SelectedPath = folderPathBox.Text
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+                folderPathBox.Text = dialog.SelectedPath;
+        }
+
+        private void DbPathButton_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Title = "Select database file",
+                Filter = "SQLite DB (*.db)|*.db|All Files (*.*)|*.*",
+                FileName = dbPathBox.Text
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+                dbPathBox.Text = dialog.FileName;
+        }
+
+        private void SaveButton_Click(object? sender, EventArgs e)
+        {
+            var userFolderPath = folderPathBox.Text;
+            var dbPath = dbPathBox.Text;
+
+            if (string.IsNullOrWhiteSpace(userFolderPath) || string.IsNullOrWhiteSpace(dbPath))
+            {
+                MessageBox.Show("Please provide both folder and database paths.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            ConfigService.SaveFolderPath(selectedPath);
-            MessageBox.Show("User folder directory saved successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            this.Close();
+            ConfigService.SaveFolderPath(userFolderPath);
+            ConfigService.SaveDatabasePath(dbPath);
+
+            DatabaseService.OnNotify = message =>
+                MessageBox.Show(message, "Database Created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            DatabaseService.SetDatabasePath(dbPath);
+            DatabaseService.Initialize(); // 👈 This ensures 'users' table exists
+
+
+            MessageBox.Show("Configuration saved successfully.", "Configured", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Close();
         }
     }
-#nullable restore
 }
+#nullable restore
