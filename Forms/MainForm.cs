@@ -183,7 +183,8 @@ private void AddUser_Click(object? sender, EventArgs e)
                 user.FirstName,
                 user.LastName,
                 user.Email,
-                user.CustomerCode // used as 'id'
+                user.CustomerCode,
+                user.Company
             );
 
 

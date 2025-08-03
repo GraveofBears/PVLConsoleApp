@@ -17,7 +17,8 @@ namespace AuthServerTool.Forms
             string firstName,
             string lastName,
             string email,
-            string customerCode)
+            string customerCode,
+            string company)
         {
             InitializeComponent();
             this.Text = $"Edit User: {username}";
@@ -25,7 +26,7 @@ namespace AuthServerTool.Forms
             usernameInput.Text = username;
             emailInput.Text = email;
             customerCodeInput.Text = customerCode;
-            companyInput.Text = string.Empty; // Optional: Remove this line if Company input was deleted
+            companyInput.Text = company;
             firstNameInput.Text = firstName;
             lastNameInput.Text = lastName;
         }
@@ -35,7 +36,7 @@ namespace AuthServerTool.Forms
             var updatedUsername = usernameInput.Text.Trim();
             var updatedEmail = emailInput.Text.Trim();
             var updatedCustomerCode = customerCodeInput.Text.Trim();
-            var updatedCompany = companyInput.Text.Trim(); // Optional: Remove if Company no longer used
+            var updatedCompany = companyInput.Text.Trim(); 
             var updatedFirstName = firstNameInput.Text.Trim();
             var updatedLastName = lastNameInput.Text.Trim();
             var newPassword = passwordInput.Text;
@@ -60,6 +61,7 @@ namespace AuthServerTool.Forms
                 : "No changes were made.";
 
             MessageBox.Show(result, "Update", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            this.DialogResult = DialogResult.OK;
             this.Close();
         }
 

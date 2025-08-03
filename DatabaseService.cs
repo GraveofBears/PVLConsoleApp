@@ -2,6 +2,7 @@
 using System;
 using System.Data.SQLite;
 using System.IO;
+using System.Collections.Generic;
 
 namespace AuthServerTool
 {
@@ -12,12 +13,9 @@ namespace AuthServerTool
 
         public static void Initialize()
         {
-            bool newlyCreated = false;
-
             if (!File.Exists(DatabaseFile))
             {
                 SQLiteConnection.CreateFile(DatabaseFile);
-                newlyCreated = true;
                 Console.WriteLine("📂 Database file created.");
             }
 
@@ -47,7 +45,7 @@ namespace AuthServerTool
                 );";
             cmd.ExecuteNonQuery();
 
-            // 🔍 Patch missing user columns
+            // 🔍 Patch missing columns in 'users'
             var requiredColumns = new[] { "customerCode", "company", "firstName", "lastName", "isSuspended" };
             cmd.CommandText = "PRAGMA table_info(users);";
             using var reader = cmd.ExecuteReader();
@@ -68,23 +66,8 @@ namespace AuthServerTool
                     string columnType = column == "isSuspended" ? "INTEGER DEFAULT 0" : "TEXT";
                     cmd.CommandText = $"ALTER TABLE users ADD COLUMN {column} {columnType};";
                     cmd.ExecuteNonQuery();
-                    Console.WriteLine($"🔧 Patched missing column: {column}");
+                    Console.WriteLine($"🔧 Added missing column: {column}");
                 }
-            }
-
-            // 🧪 Optional seed for dev visibility
-            if (newlyCreated)
-            {
-                cmd.CommandText = @"
-                    INSERT INTO users (
-                        username, passwordHash, email, isSuspended,
-                        customerCode, company, firstName, lastName
-                    ) VALUES (
-                        'AdminUser', 'placeholderHash', 'Admin', 'admin@example.com', 0,
-                        'CUST001', 'DemoCorp', 'Admin', 'User'
-                    );";
-                cmd.ExecuteNonQuery();
-                Console.WriteLine("🧪 Inserted dummy admin user for GUI visibility.");
             }
         }
 
@@ -92,6 +75,11 @@ namespace AuthServerTool
         {
             var conn = new SQLiteConnection(ConnectionString);
             conn.Open();
+
+            // ⚙️ Recommended for consistency during read/write
+            using var cmd = new SQLiteCommand("PRAGMA journal_mode=WAL;", conn);
+            cmd.ExecuteNonQuery();
+
             return conn;
         }
     }

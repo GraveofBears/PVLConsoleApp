@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data.SQLite;
 using AuthServerTool.Models;
-using AuthServerTool.Models; // assuming UserRepository is in the same Models folder
+
 
 
 public class UserRepository
