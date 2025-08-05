@@ -3,23 +3,20 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
+using BCrypt.Net;
 using AuthServerTool.Models;
 
 namespace AuthServerTool.Services
 {
     public static class UserService
     {
-        // 🔐 Hash the password using SHA256
+        // ✅ Replaced SHA256 with BCrypt password hashing
         private static string HashPassword(string input)
         {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return Convert.ToBase64String(bytes);
+            return BCrypt.Net.BCrypt.HashPassword(input);
         }
 
-        // 🔍 Check if username already exists
         private static bool UserExists(string username)
         {
             using var conn = DatabaseService.GetConnection();
@@ -28,7 +25,6 @@ namespace AuthServerTool.Services
             return (long)cmd.ExecuteScalar() > 0;
         }
 
-        // 📁 Create user-specific folder if not already present
         private static void TryCreateUserFolder(string username)
         {
             var root = ConfigService.Get("UserDataRoot") ?? "UserData";
@@ -48,12 +44,11 @@ namespace AuthServerTool.Services
             }
         }
 
-        // ➕ Register new user
         public static bool AddNewUser(User user, string password)
         {
             if (UserExists(user.Username)) return false;
 
-            user.PasswordHash = HashPassword(password);
+            user.PasswordHash = HashPassword(password); // ✅ bcrypt applied here
             user.CreatedAt = user.CreatedAt == default ? DateTime.UtcNow : user.CreatedAt;
 
             using var conn = DatabaseService.GetConnection();
@@ -82,7 +77,7 @@ namespace AuthServerTool.Services
             return true;
         }
 
-        // ✅ Validate login
+        // ✅ Updated login validation to use BCrypt.Verify
         public static bool ValidateUser(string username, string password)
         {
             using var conn = DatabaseService.GetConnection();
@@ -94,10 +89,10 @@ namespace AuthServerTool.Services
 
             var storedHash = reader.GetString(0);
             var isSuspended = reader.GetInt32(1);
-            return storedHash == HashPassword(password) && isSuspended == 0;
+
+            return BCrypt.Net.BCrypt.Verify(password, storedHash) && isSuspended == 0;
         }
 
-        // 🔎 Retrieve all users
         public static List<User> GetAllUsers()
         {
             var users = new List<User>();
@@ -116,7 +111,7 @@ namespace AuthServerTool.Services
                         CustomerCode = reader["customerCode"].ToString() ?? "",
                         FirstName = reader["firstName"].ToString() ?? "",
                         LastName = reader["lastName"].ToString() ?? "",
-                        Company = reader["company"].ToString() ?? "",                        
+                        Company = reader["company"].ToString() ?? "",
                         PasswordHash = reader["passwordHash"].ToString() ?? "",
                         CreatedAt = DateTime.TryParse(reader["createdAt"].ToString(), out var dt) ? dt : DateTime.UtcNow,
                         IsSuspended = Convert.ToInt32(reader["isSuspended"]) == 1
@@ -132,7 +127,6 @@ namespace AuthServerTool.Services
             return users;
         }
 
-        // ✏️ Update user metadata
         public static bool EditUser(string username, string? newEmail = null, string? newCustomerCode = null, string? newCompany = null)
         {
             using var conn = DatabaseService.GetConnection();
@@ -152,7 +146,6 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        // ✏️ Update user's full name
         public static bool UpdateName(string username, string firstName, string lastName)
         {
             using var conn = DatabaseService.GetConnection();
@@ -168,7 +161,7 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        // 🔑 Change password
+        // ✅ Updated password update logic to use bcrypt
         public static bool UpdatePassword(string username, string newPassword)
         {
             if (!UserExists(username)) return false;
@@ -183,7 +176,6 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        // 🚫 Suspend a user
         public static bool SuspendUser(string username)
         {
             using var conn = DatabaseService.GetConnection();
@@ -192,7 +184,6 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        // ✅ Unsuspend a user
         public static bool UnsuspendUser(string username)
         {
             using var conn = DatabaseService.GetConnection();
@@ -201,7 +192,6 @@ namespace AuthServerTool.Services
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        // 🧹 Delete user and folder
         public static bool DeleteUser(string username)
         {
             using var conn = DatabaseService.GetConnection();

@@ -4,6 +4,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Text.Json;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace AuthServerTool
 {
@@ -15,23 +16,27 @@ namespace AuthServerTool
 
         static DatabaseService()
         {
-            var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-            if (File.Exists(configPath))
+            LoadConfigFromAppSettings();
+            Initialize();
+        }
+
+        // 🧠 Load config from appsettings.json
+        private static void LoadConfigFromAppSettings()
+        {
+            try
             {
-                try
-                {
-                    var json = File.ReadAllText(configPath);
-                    var config = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                    if (config != null && config.TryGetValue("DatabasePath", out string? path) && !string.IsNullOrWhiteSpace(path))
-                    {
-                        SetDatabasePath(path);
-                        Initialize();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"⚠️ Failed to load config.json: {ex.Message}");
-                }
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .Build();
+
+                var path = config["DatabasePath"];
+                if (!string.IsNullOrWhiteSpace(path))
+                    SetDatabasePath(path, logPath: true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Failed to load appsettings.json: {ex.Message}");
             }
         }
 
@@ -40,14 +45,14 @@ namespace AuthServerTool
             if (!File.Exists(_databasePath))
             {
                 SQLiteConnection.CreateFile(_databasePath);
-                Console.WriteLine("📂 Database file created.");
+                Console.WriteLine($"📂 Created database file: {_databasePath}");
             }
 
             using var conn = new SQLiteConnection(_connectionString);
             conn.Open();
             using var cmd = new SQLiteCommand(conn);
 
-            // 👤 Create 'users' table
+            // 👤 Create users table
             cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +64,7 @@ namespace AuthServerTool
                 );";
             cmd.ExecuteNonQuery();
 
-            // 📦 Create 'sessions' table
+            // 📦 Create sessions table
             cmd.CommandText = @"
                 CREATE TABLE IF NOT EXISTS sessions (
                     sessionId TEXT PRIMARY KEY,
@@ -69,12 +74,12 @@ namespace AuthServerTool
                 );";
             cmd.ExecuteNonQuery();
 
-            // 🔍 Patch missing columns in 'users'
+            // 🔍 Patch missing columns in users
             var requiredColumns = new[] { "customerCode", "company", "firstName", "lastName", "isSuspended" };
             cmd.CommandText = "PRAGMA table_info(users);";
             using var reader = cmd.ExecuteReader();
-            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             while (reader.Read())
             {
                 if (reader["name"] is string name)
@@ -106,7 +111,7 @@ namespace AuthServerTool
             return conn;
         }
 
-        public static void SetDatabasePath(string newPath)
+        public static void SetDatabasePath(string newPath, bool logPath = false)
         {
             if (Directory.Exists(newPath))
             {
@@ -122,12 +127,17 @@ namespace AuthServerTool
             _databasePath = newPath;
             _connectionString = $"Data Source={_databasePath};Version=3;";
 
-            // 🔄 Create DB if missing
             if (!File.Exists(_databasePath))
             {
                 SQLiteConnection.CreateFile(_databasePath);
-                Console.WriteLine($"📂 Created blank DB at: {_databasePath}");
-                OnNotify?.Invoke($"Blank database created at:\n{_databasePath}");
+                Console.WriteLine($"📂 Created blank database at: {_databasePath}");
+                OnNotify?.Invoke($"Blank database created:\n{_databasePath}");
+            }
+
+            if (logPath)
+            {
+                Console.WriteLine($"📂 Using database: {_databasePath}");
+                OnNotify?.Invoke($"Using database:\n{_databasePath}");
             }
         }
 
