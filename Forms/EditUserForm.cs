@@ -1,6 +1,6 @@
 ﻿#nullable enable
 using System;
-using System.Text.RegularExpressions;
+using System.Net.Mail;
 using System.Windows.Forms;
 using AuthServerTool.Services;
 
@@ -8,68 +8,78 @@ namespace AuthServerTool.Forms
 {
     public partial class EditUserForm : Form
     {
-        // Public accessor for the entered username
-        public string EnteredUsername => usernameInput.Text.Trim();
+        private readonly string originalUsername;
 
-        public EditUserForm(
-            string username,
-            string passwordHash,
-            string firstName,
-            string lastName,
-            string email,
-            string customerCode,
-            string company)
+        public EditUserForm(string username)
         {
+            originalUsername = username;
             InitializeComponent();
-            this.Text = $"Edit User: {username}";
-
-            usernameInput.Text = username;
-            emailInput.Text = email;
-            customerCodeInput.Text = customerCode;
-            companyInput.Text = company;
-            firstNameInput.Text = firstName;
-            lastNameInput.Text = lastName;
+            LoadUserData();
         }
 
-        private void saveButton_Click(object? sender, EventArgs e)
+        private void LoadUserData()
         {
-            var updatedUsername = usernameInput.Text.Trim();
-            var updatedEmail = emailInput.Text.Trim();
-            var updatedCustomerCode = customerCodeInput.Text.Trim();
-            var updatedCompany = companyInput.Text.Trim(); 
-            var updatedFirstName = firstNameInput.Text.Trim();
-            var updatedLastName = lastNameInput.Text.Trim();
-            var newPassword = passwordInput.Text;
-
-            if (!IsValidEmail(updatedEmail))
+            var user = UserService.GetAllUsers().Find(u => u.Username == originalUsername);
+            if (user == null)
             {
-                MessageBox.Show("Please enter a valid email address.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("User not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Close();
                 return;
             }
 
-            bool infoUpdated = UserService.EditUser(updatedUsername, updatedEmail, updatedCustomerCode, updatedCompany);
-            bool nameUpdated = UserService.UpdateName(updatedUsername, updatedFirstName, updatedLastName);
-            bool passwordUpdated = false;
+            usernameInput.Text = user.Username;
+            usernameInput.Enabled = false;
+
+            firstNameInput.Text = user.FirstName;
+            lastNameInput.Text = user.LastName;
+            emailInput.Text = user.Email;
+            customerCodeInput.Text = user.CustomerCode;
+            companyInput.Text = user.Company;
+        }
+
+        private void saveButton_Click(object sender, EventArgs e)
+        {
+            var firstName = firstNameInput.Text.Trim();
+            var lastName = lastNameInput.Text.Trim();
+            var email = emailInput.Text.Trim();
+            var customerCode = customerCodeInput.Text.Trim();
+            var company = companyInput.Text.Trim();
+            var newPassword = passwordInput.Text;
+
+            if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(customerCode) ||
+                string.IsNullOrWhiteSpace(company))
+            {
+                MessageBox.Show("Please fill in all fields except password.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!MailAddress.TryCreate(email, out _))
+            {
+                MessageBox.Show("Invalid email format.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            bool updated = true;
+
+            updated &= UserService.UpdateName(originalUsername, firstName, lastName);
+            updated &= UserService.EditUser(originalUsername, email, customerCode, company);
 
             if (!string.IsNullOrWhiteSpace(newPassword))
             {
-                passwordUpdated = UserService.UpdatePassword(updatedUsername, newPassword);
+                updated &= UserService.UpdatePassword(originalUsername, newPassword);
             }
 
-            string result = (infoUpdated || nameUpdated || passwordUpdated)
-                ? "User updated successfully."
-                : "No changes were made.";
-
-            MessageBox.Show(result, "Update", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            this.DialogResult = DialogResult.OK;
-            this.Close();
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            return Regex.IsMatch(email,
-                @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-                RegexOptions.IgnoreCase);
+            if (updated)
+            {
+                MessageBox.Show("User updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            else
+            {
+                MessageBox.Show("Failed to update user.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

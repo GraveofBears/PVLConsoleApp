@@ -48,6 +48,7 @@ namespace AuthServerTool.Forms
             var lastName = lastNameInput.Text.Trim();
             var company = companyInput.Text.Trim();
 
+            // 🔒 Basic validation
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) ||
                 string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(customerCode) ||
                 string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
@@ -63,6 +64,7 @@ namespace AuthServerTool.Forms
                 return;
             }
 
+            // 👤 Create user object (without password hash yet)
             var newUser = new User
             {
                 Username = username,
@@ -71,16 +73,17 @@ namespace AuthServerTool.Forms
                 LastName = lastName,
                 Email = email,
                 Company = company,
-                PasswordHash = "temp-placeholder"
+                PasswordHash = string.Empty // will be set in service
             };
 
+            // 🧠 Delegate password hashing and saving to service
             bool success = UserService.AddNewUser(newUser, password);
 
             if (success)
             {
                 RegisteredUsername = username;
 
-                // 🗂 Create folder in configured location
+                // 🗂 Create user folder
                 var folderPath = Path.Combine(config.UserRootFolder, username);
                 if (!Directory.Exists(folderPath))
                 {

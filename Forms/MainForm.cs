@@ -143,16 +143,7 @@ namespace PVLConsoleApp.Forms
         {
             if (!TryGetSelectedUser(out var user)) return;
 
-            using var dialog = new EditUserForm(
-                user.Username,
-                user.PasswordHash,
-                user.FirstName,
-                user.LastName,
-                user.Email,
-                user.CustomerCode,
-                user.Company
-            );
-
+            using var dialog = new EditUserForm(user.Username);
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 RefreshUserList();
