@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Collections.Generic;
 
-namespace AuthServerTool.Services
+namespace PVLConsoleApp.Services
 {
     public static class ConfigService
     {

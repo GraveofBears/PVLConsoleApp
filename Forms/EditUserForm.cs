@@ -1,25 +1,31 @@
 ﻿#nullable enable
 using System;
-using System.Net.Mail;
 using System.Windows.Forms;
-using AuthServerTool.Services;
+using PVLConsoleApp.Models;
+using PVLConsoleApp.Services;
 
-namespace AuthServerTool.Forms
+namespace PVLConsoleApp.Forms
 {
     public partial class EditUserForm : Form
     {
-        private readonly string originalUsername;
+        private readonly string username;
 
         public EditUserForm(string username)
         {
-            originalUsername = username;
+            this.username = username;
             InitializeComponent();
+            Load += EditUserForm_Load;
+        }
+
+        private void EditUserForm_Load(object? sender, EventArgs e)
+        {
+            SetupLayout();
             LoadUserData();
         }
 
         private void LoadUserData()
         {
-            var user = UserService.GetAllUsers().Find(u => u.Username == originalUsername);
+            var user = UserService.GetUser(username);
             if (user == null)
             {
                 MessageBox.Show("User not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -27,52 +33,32 @@ namespace AuthServerTool.Forms
                 return;
             }
 
-            usernameInput.Text = user.Username;
-            usernameInput.Enabled = false;
-
-            firstNameInput.Text = user.FirstName;
-            lastNameInput.Text = user.LastName;
-            emailInput.Text = user.Email;
-            customerCodeInput.Text = user.CustomerCode;
-            companyInput.Text = user.Company;
+            usernameInput!.Text = user.Username;
+            firstNameInput!.Text = user.FirstName;
+            lastNameInput!.Text = user.LastName;
+            emailInput!.Text = user.Email;
+            customerCodeInput!.Text = user.CustomerCode;
+            companyInput!.Text = user.Company;
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        private void saveButton_Click(object? sender, EventArgs e)
         {
-            var firstName = firstNameInput.Text.Trim();
-            var lastName = lastNameInput.Text.Trim();
-            var email = emailInput.Text.Trim();
-            var customerCode = customerCodeInput.Text.Trim();
-            var company = companyInput.Text.Trim();
-            var newPassword = passwordInput.Text;
-
-            if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
-                string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(customerCode) ||
-                string.IsNullOrWhiteSpace(company))
+            var updatedUser = new User
             {
-                MessageBox.Show("Please fill in all fields except password.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+                Username = username,
+                FirstName = firstNameInput!.Text,
+                LastName = lastNameInput!.Text,
+                Email = emailInput!.Text,
+                CustomerCode = customerCodeInput!.Text,
+                Company = companyInput!.Text
+            };
 
-            if (!MailAddress.TryCreate(email, out _))
+            var newPassword = string.IsNullOrWhiteSpace(passwordInput!.Text) ? null : passwordInput.Text;
+
+            var success = UserService.UpdateUser(updatedUser, newPassword);
+
+            if (success)
             {
-                MessageBox.Show("Invalid email format.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            bool updated = true;
-
-            updated &= UserService.UpdateName(originalUsername, firstName, lastName);
-            updated &= UserService.EditUser(originalUsername, email, customerCode, company);
-
-            if (!string.IsNullOrWhiteSpace(newPassword))
-            {
-                updated &= UserService.UpdatePassword(originalUsername, newPassword);
-            }
-
-            if (updated)
-            {
-                MessageBox.Show("User updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;
                 Close();
             }

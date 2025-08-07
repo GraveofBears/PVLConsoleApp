@@ -1,6 +1,6 @@
 ﻿#nullable enable
-using AuthServerTool;
-using AuthServerTool.Services;
+using PVLConsoleApp;
+using PVLConsoleApp.Services;
 using System;
 using System.Drawing;
 using System.Windows.Forms;

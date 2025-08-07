@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
-namespace AuthServerTool
+namespace PVLConsoleApp
 {
     public static class DatabaseService
     {

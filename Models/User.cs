@@ -1,7 +1,7 @@
 ﻿#nullable enable
 using System;
 
-namespace AuthServerTool.Models
+namespace PVLConsoleApp.Models
 {
     public class User
     {

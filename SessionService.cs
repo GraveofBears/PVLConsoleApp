@@ -2,9 +2,9 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using AuthServerTool.Models;
+using PVLConsoleApp.Models;
 
-namespace AuthServerTool
+namespace PVLConsoleApp
 {
     public class SessionService
     {

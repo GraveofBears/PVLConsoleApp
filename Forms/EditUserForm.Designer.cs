@@ -3,37 +3,28 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace AuthServerTool.Forms
+namespace PVLConsoleApp.Forms
 {
-    partial class EditUserForm
+    public partial class EditUserForm
     {
-        private System.ComponentModel.IContainer components = null;
-        private Label usernameLabel;
-        private TextBox usernameInput;
-        private Label firstNameLabel;
-        private TextBox firstNameInput;
-        private Label lastNameLabel;
-        private TextBox lastNameInput;
-        private Label emailLabel;
-        private TextBox emailInput;
-        private Label customerCodeLabel;
-        private TextBox customerCodeInput;
-        private Label companyLabel;
-        private TextBox companyInput;
-        private Label passwordLabel;
-        private TextBox passwordInput;
-        private Button saveButton;
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null)) components.Dispose();
-            base.Dispose(disposing);
-        }
+        private Label? usernameLabel;
+        private TextBox? usernameInput;
+        private Label? firstNameLabel;
+        private TextBox? firstNameInput;
+        private Label? lastNameLabel;
+        private TextBox? lastNameInput;
+        private Label? emailLabel;
+        private TextBox? emailInput;
+        private Label? customerCodeLabel;
+        private TextBox? customerCodeInput;
+        private Label? companyLabel;
+        private TextBox? companyInput;
+        private Label? passwordLabel;
+        private TextBox? passwordInput;
+        private Button? saveButton;
 
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-
             usernameLabel = new Label();
             usernameInput = new TextBox();
             firstNameLabel = new Label();
@@ -52,70 +43,73 @@ namespace AuthServerTool.Forms
 
             SuspendLayout();
 
-            int x = 20, width = 250, labelHeight = 15, inputHeight = 23;
-            int y = 20, padding = 5;
+            saveButton.Text = "Save Changes";
+            saveButton.Name = "saveButton";
+            saveButton.Size = new Size(250, 30);
+            saveButton.Click += saveButton_Click;
 
-            void PlaceControl(Control label, Control input)
+            AutoScaleDimensions = new SizeF(6F, 13F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(300, 500);
+            Name = "EditUserForm";
+            Text = "Edit User";
+
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        private void SetupLayout()
+        {
+            int x = 20, width = 250, labelHeight = 15, inputHeight = 23;
+            int y = 20, pad = 5;
+
+            void Place(Control label, Control input)
             {
                 label.Location = new Point(x, y);
                 label.Size = new Size(width, labelHeight);
-                y += labelHeight + padding;
+                Controls.Add(label);
+                y += labelHeight + pad;
+
                 input.Location = new Point(x, y);
                 input.Size = new Size(width, inputHeight);
-                y += inputHeight + padding * 2;
-                Controls.Add(label);
                 Controls.Add(input);
+                y += inputHeight + pad * 2;
             }
 
-            // Username
-            usernameLabel.Text = "Username:";
-            usernameInput.Name = "usernameInput";
-            PlaceControl(usernameLabel, usernameInput);
+            usernameLabel!.Text = "Username:";
+            usernameInput!.Name = "usernameInput";
+            usernameInput.ReadOnly = true;
+            Place(usernameLabel, usernameInput);
 
-            // First Name
-            firstNameLabel.Text = "First Name:";
-            firstNameInput.Name = "firstNameInput";
-            PlaceControl(firstNameLabel, firstNameInput);
+            firstNameLabel!.Text = "First Name:";
+            firstNameInput!.Name = "firstNameInput";
+            Place(firstNameLabel, firstNameInput);
 
-            // Last Name
-            lastNameLabel.Text = "Last Name:";
-            lastNameInput.Name = "lastNameInput";
-            PlaceControl(lastNameLabel, lastNameInput);
+            lastNameLabel!.Text = "Last Name:";
+            lastNameInput!.Name = "lastNameInput";
+            Place(lastNameLabel, lastNameInput);
 
-            // Email
-            emailLabel.Text = "Email:";
-            emailInput.Name = "emailInput";
-            PlaceControl(emailLabel, emailInput);
+            emailLabel!.Text = "Email:";
+            emailInput!.Name = "emailInput";
+            Place(emailLabel, emailInput);
 
-            // Customer Code
-            customerCodeLabel.Text = "Customer Code:";
-            customerCodeInput.Name = "customerCodeInput";
-            PlaceControl(customerCodeLabel, customerCodeInput);
+            customerCodeLabel!.Text = "Customer Code:";
+            customerCodeInput!.Name = "customerCodeInput";
+            Place(customerCodeLabel, customerCodeInput);
 
-            // Company
-            companyLabel.Text = "Company:";
-            companyInput.Name = "companyInput";
-            PlaceControl(companyLabel, companyInput);
+            companyLabel!.Text = "Company:";
+            companyInput!.Name = "companyInput";
+            Place(companyLabel, companyInput);
 
-            // Password
-            passwordLabel.Text = "New Password (optional):";
-            passwordInput.Name = "passwordInput";
+            passwordLabel!.Text = "New Password (optional):";
+            passwordInput!.Name = "passwordInput";
             passwordInput.PasswordChar = '*';
-            PlaceControl(passwordLabel, passwordInput);
+            Place(passwordLabel, passwordInput);
 
-            // Save Button
-            saveButton.Text = "Save Changes";
-            saveButton.Name = "saveButton";
-            saveButton.Size = new Size(width, 30);
-            saveButton.Location = new Point(x, y);
-            saveButton.Click += new EventHandler(saveButton_Click);
+            saveButton!.Location = new Point(x, y);
             Controls.Add(saveButton);
 
-            // Form
             ClientSize = new Size(300, saveButton.Bottom + 20);
-            Name = "EditUserForm";
-            ResumeLayout(false);
-            PerformLayout();
         }
     }
 }

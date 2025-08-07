@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using AuthServerTool.Models;
-using AuthServerTool.Services;
-using AuthServerTool.Forms;
+using PVLConsoleApp.Models;
+using PVLConsoleApp.Services;
+using PVLConsoleApp.Forms;
 
 namespace PVLConsoleApp.Forms
 {
@@ -31,38 +31,15 @@ namespace PVLConsoleApp.Forms
         private void InitializeMenu()
         {
             var fileMenu = new ToolStripMenuItem("File");
-
-            var configureItem = new ToolStripMenuItem("Configure");
-            configureItem.Click += ConfigureItem_Click;
-
-            var exitItem = new ToolStripMenuItem("Exit");
-            exitItem.Click += (_, _) => Close();
-
-            fileMenu.DropDownItems.Add(configureItem);
-            fileMenu.DropDownItems.Add(exitItem);
+            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Configure", null, ConfigureItem_Click));
+            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Exit", null, (_, _) => Close()));
 
             var editMenu = new ToolStripMenuItem("Edit");
-
-            var addItem = new ToolStripMenuItem("Add New User");
-            addItem.Click += AddUser_Click;
-
-            var editItem = new ToolStripMenuItem("Edit Selected User");
-            editItem.Click += EditUser_Click;
-
-            var suspendItem = new ToolStripMenuItem("Suspend Selected User");
-            suspendItem.Click += SuspendUser_Click;
-
-            var unsuspendItem = new ToolStripMenuItem("Unsuspend Selected User");
-            unsuspendItem.Click += UnsuspendUser_Click;
-
-            var deleteItem = new ToolStripMenuItem("Delete Selected User");
-            deleteItem.Click += DeleteUser_Click;
-
-            editMenu.DropDownItems.Add(addItem);
-            editMenu.DropDownItems.Add(editItem);
-            editMenu.DropDownItems.Add(suspendItem);
-            editMenu.DropDownItems.Add(unsuspendItem);
-            editMenu.DropDownItems.Add(deleteItem);
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Add New User", null, AddUser_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Edit Selected User", null, EditUser_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Suspend Selected User", null, SuspendUser_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Unsuspend Selected User", null, UnsuspendUser_Click));
+            editMenu.DropDownItems.Add(new ToolStripMenuItem("Delete Selected User", null, DeleteUser_Click));
 
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(editMenu);
@@ -99,11 +76,13 @@ namespace PVLConsoleApp.Forms
 
                 foreach (var user in users)
                 {
-                    var item = new ListViewItem(user.CustomerCode);
+                    var item = new ListViewItem(user.CustomerCode)
+                    {
+                        Tag = user
+                    };
                     item.SubItems.Add(user.Username);
                     item.SubItems.Add(user.Company);
                     item.SubItems.Add(user.IsSuspended ? "Suspended" : "Active");
-                    item.Tag = user;
                     userListView.Items.Add(item);
                 }
             }
@@ -123,15 +102,12 @@ namespace PVLConsoleApp.Forms
         private void AddUser_Click(object? sender, EventArgs e)
         {
             using var dialog = new UserRegistrationForm();
-            if (dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
             {
-                if (!string.IsNullOrWhiteSpace(dialog.RegisteredUsername))
+                var folderPath = Path.Combine(ConfigService.LoadFolderPath(), dialog.RegisteredUsername);
+                if (!Directory.Exists(folderPath))
                 {
-                    var folderPath = Path.Combine(ConfigService.LoadFolderPath(), dialog.RegisteredUsername);
-                    if (!Directory.Exists(folderPath))
-                    {
-                        Directory.CreateDirectory(folderPath);
-                    }
+                    Directory.CreateDirectory(folderPath);
                 }
 
                 RefreshUserList();
@@ -147,31 +123,29 @@ namespace PVLConsoleApp.Forms
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 RefreshUserList();
-                MessageBox.Show("User updated.");
+                MessageBox.Show("User updated.", "Success");
             }
         }
 
         private void SuspendUser_Click(object? sender, EventArgs e)
         {
-            if (!TryGetSelectedUser(out var user)) return;
-            if (user.IsSuspended) return;
+            if (!TryGetSelectedUser(out var user) || user.IsSuspended) return;
 
             if (UserService.SuspendUser(user.Username))
             {
                 RefreshUserList();
-                MessageBox.Show("User suspended.");
+                MessageBox.Show("User suspended.", "Success");
             }
         }
 
         private void UnsuspendUser_Click(object? sender, EventArgs e)
         {
-            if (!TryGetSelectedUser(out var user)) return;
-            if (!user.IsSuspended) return;
+            if (!TryGetSelectedUser(out var user) || !user.IsSuspended) return;
 
             if (UserService.UnsuspendUser(user.Username))
             {
                 RefreshUserList();
-                MessageBox.Show("User unsuspended.");
+                MessageBox.Show("User unsuspended.", "Success");
             }
         }
 
@@ -188,11 +162,11 @@ namespace PVLConsoleApp.Forms
                 if (Directory.Exists(folder)) Directory.Delete(folder, true);
 
                 RefreshUserList();
-                MessageBox.Show("User and folder deleted.");
+                MessageBox.Show("User and folder deleted.", "Success");
             }
             else
             {
-                MessageBox.Show("Deletion failed.");
+                MessageBox.Show("Deletion failed.", "Error");
             }
         }
 
@@ -205,7 +179,7 @@ namespace PVLConsoleApp.Forms
                 return false;
             }
 
-            user = userListView.SelectedItems[0].Tag as User;
+            user = userListView.SelectedItems[0].Tag as User ?? null!;
             return user != null;
         }
     }

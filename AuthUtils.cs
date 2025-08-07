@@ -6,7 +6,7 @@ using System.Text;
 
 
 
-namespace AuthServerTool.Utils
+namespace PVLConsoleApp.Utils
 {
     public static class AuthUtils
     {
@@ -18,7 +18,7 @@ namespace AuthServerTool.Utils
 
             var now = DateTime.UtcNow;
             var token = new JwtSecurityToken(
-                issuer: "AuthServerTool",
+                issuer: "PVLConsoleApp",
                 audience: "AppClient",
                 claims: new[] {
                     new Claim(JwtRegisteredClaimNames.Sub, username),
@@ -44,7 +44,7 @@ namespace AuthServerTool.Utils
                 var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = "AuthServerTool",
+                    ValidIssuer = "PVLConsoleApp",
 
                     ValidateAudience = true,
                     ValidAudience = "AppClient",

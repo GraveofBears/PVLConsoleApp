@@ -1,4 +1,4 @@
-﻿namespace AuthServerTool.Forms
+﻿namespace PVLConsoleApp.Forms
 {
     partial class UserRegistrationForm
     {

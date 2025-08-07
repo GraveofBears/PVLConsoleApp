@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
-using AuthServerTool;
-using AuthServerTool.Services;
+using PVLConsoleApp;
+using PVLConsoleApp.Services;
 using PVLConsoleApp.Forms;
 
 namespace PVLConsoleApp

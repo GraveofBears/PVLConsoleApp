@@ -4,10 +4,10 @@ using System.IO;
 using System.Net.Mail;
 using System.Text.Json;
 using System.Windows.Forms;
-using AuthServerTool.Models;
-using AuthServerTool.Services;
+using PVLConsoleApp.Models;
+using PVLConsoleApp.Services;
 
-namespace AuthServerTool.Forms
+namespace PVLConsoleApp.Forms
 {
     public partial class UserRegistrationForm : Form
     {
